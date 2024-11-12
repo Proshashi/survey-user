@@ -79,13 +79,29 @@ const SurveyPage = (props: Props) => {
           setSurveyData(data);
         })
         .catch((err) => {
-          setApiError("Oops! Looks like you are in the wrong place.");
+          setApiError(
+            "Oops! The survey you are looking for was not found. Re-verify your URL.",
+          );
         });
     }
   }, [id]);
 
   if (apiError) {
-    return <div>{apiError}</div>;
+    return (
+      <div
+        style={{
+          color: "red",
+          fontSize: "2rem",
+          fontWeight: "bold",
+          alignItems: "center",
+          display: "flex",
+          justifyContent: "center",
+          height: "100vh",
+        }}
+      >
+        {apiError}
+      </div>
+    );
   }
 
   return (
