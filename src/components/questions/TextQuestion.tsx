@@ -14,11 +14,8 @@ export const TextQuestion: React.FC<TextQuestionProps> = ({
   required,
   helpText,
 }) => {
-  const context = useFormikContext();
-  console.log({ context, name });
-
   const [field, meta, helpers] = useField(name);
-  console.log({ field });
+
   return (
     <Form.Item
       label={label}
@@ -26,9 +23,11 @@ export const TextQuestion: React.FC<TextQuestionProps> = ({
       style={{
         margin: "20px 0 30px 0",
       }}
+      validateStatus={meta.error && meta.touched ? "error" : ""}
+      help={meta.error && meta.touched ? meta.error : ""}
+      required={required}
     >
       <Input
-        required={required}
         value={field.value}
         onChange={(e) => {
           helpers.setValue(e.target.value);

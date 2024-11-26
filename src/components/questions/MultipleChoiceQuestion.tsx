@@ -7,7 +7,7 @@ interface MultipleChoiceQuestionProps {
   label: string;
   required?: boolean;
   helpText?: string;
-  options?: { option: string; order: number }[];
+  options?: { option: string; order: number; id: string }[];
 }
 
 const MultipleChoiceQuestion = ({
@@ -27,11 +27,13 @@ const MultipleChoiceQuestion = ({
         margin: "20px 0 30px 0",
       }}
       required={required}
+      validateStatus={meta.error && meta.touched ? "error" : ""}
+      help={meta.error && meta.touched ? meta.error : ""}
     >
       <Checkbox.Group
         options={options?.map((opt) => ({
           label: opt.option,
-          value: opt.option,
+          value: opt.id,
         }))}
         onChange={(values) => {
           helpers.setValue(values);

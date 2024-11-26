@@ -7,7 +7,7 @@ interface SingleChoiceQuestionProps {
   label: string;
   required?: boolean;
   helpText?: string;
-  options?: { option: string; order: number }[];
+  options?: { option: string; order: number; id: string }[];
 }
 
 const SingleChoiceQuestion = ({
@@ -27,6 +27,8 @@ const SingleChoiceQuestion = ({
         margin: "20px 0 30px 0",
       }}
       required={required}
+      validateStatus={meta.error && meta.touched ? "error" : ""}
+      help={meta.error && meta.touched ? meta.error : ""}
     >
       <Radio.Group
         onChange={(e) => {
@@ -35,11 +37,7 @@ const SingleChoiceQuestion = ({
         value={field.value}
       >
         {options?.map((opt) => (
-          <Radio
-            key={opt.option}
-            value={opt.option}
-            checked={field.value === opt.option}
-          >
+          <Radio key={opt.id} value={opt.id} checked={field.value === opt.id}>
             {opt.option}
           </Radio>
         ))}
