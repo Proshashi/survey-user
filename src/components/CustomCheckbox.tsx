@@ -1,7 +1,7 @@
 import React, { forwardRef } from "react";
 import { useFormContext, Controller } from "react-hook-form";
-import styled, { css, keyframes } from "styled-components";
-import { Checkbox, Spin, Space } from "antd";
+import styled, { css } from "styled-components";
+import { Checkbox, Spin } from "antd";
 import type { CheckboxProps, CheckboxRef } from "antd";
 import { CheckboxGroupProps } from "antd/es/checkbox";
 
@@ -14,6 +14,7 @@ interface CustomCheckboxProps extends CheckboxProps {
   options?: Array<{ label: string; value: string }>;
   isGroup?: boolean;
   groupProps?: CheckboxGroupProps;
+  required?: boolean;
 }
 
 const CheckboxWrapper = styled.div<{ $hasError?: boolean }>`
@@ -53,7 +54,7 @@ const CheckboxWrapper = styled.div<{ $hasError?: boolean }>`
     `}
 `;
 
-const StyledLabel = styled.label`
+const StyledLabel = styled.label<{ $isRequired?: boolean }>`
   color: #666;
   text-transform: capitalize;
   font-size: 16px;
@@ -62,12 +63,16 @@ const StyledLabel = styled.label`
   background: white;
   padding: 0 4px;
   margin-bottom: 8px;
-`;
 
-const Label = styled.span`
-  margin-left: 8px;
-  color: rgba(0, 0, 0, 0.85);
-  transition: color 0.3s;
+  ${(props) =>
+    props.$isRequired &&
+    css`
+      &::after {
+        content: " *";
+        color: #ff4d4f;
+        margin-left: 2px;
+      }
+    `}
 `;
 
 const HelperText = styled.span`
@@ -103,6 +108,7 @@ const CustomCheckbox = forwardRef<CheckboxRef, CustomCheckboxProps>(
       options,
       isGroup,
       groupProps,
+      required,
       ...props
     },
     ref,
@@ -113,9 +119,16 @@ const CustomCheckbox = forwardRef<CheckboxRef, CustomCheckboxProps>(
       <Controller
         name={name}
         control={control}
+        rules={{
+          required: required && "This field is required",
+        }}
         render={({ field, fieldState }) => (
           <CheckboxWrapper $hasError={!!fieldState.error}>
-            {label && <StyledLabel htmlFor={name}>{label}</StyledLabel>}
+            {label && (
+              <StyledLabel htmlFor={name} $isRequired={required}>
+                {label}
+              </StyledLabel>
+            )}
 
             {isLoading && <Spin size="small" style={{ marginRight: 8 }} />}
 

@@ -48,9 +48,7 @@ const SurveyPage = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  const methods = useForm({
-    mode: "onChange",
-  });
+
 
   const { data: surveyData, isLoading }: UseQueryResult<any> = useQuery({
     queryKey: ["survey", id],
@@ -85,7 +83,7 @@ const SurveyPage = () => {
     },
     onSuccess: () => {
       message.success("Survey submitted successfully!");
-      // router.push("/surveys/completed");
+      router.push("/survey/success");
     },
     onError: (error: Error) => {
       console.error("Submit error:", error);
@@ -97,7 +95,12 @@ const SurveyPage = () => {
     submitMutation.mutate(data);
   };
 
+  const methods = useForm({
+    mode: "onChange",
+  });
+
   const renderQuestion = (question: any) => {
+    console.log("question", question);
     switch (question?.type) {
       case "text":
         return (

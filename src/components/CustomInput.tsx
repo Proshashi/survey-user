@@ -1,6 +1,6 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef, useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
-import styled, { css, keyframes } from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { Input, InputProps } from "antd";
 import type { InputRef } from "antd";
 
@@ -12,9 +12,10 @@ interface CustomInputProps extends Omit<InputProps, "prefix"> {
   isLoading?: boolean;
   type?: "text" | "password";
   helperText?: string;
+  required?: boolean;
 }
 
-const floatLabel = keyframes`
+const floatLabelAnimation = keyframes`
   from {
     transform: translateY(0);
     font-size: 16px;
@@ -42,6 +43,13 @@ const InputWrapper = styled.div`
       border-color: #ff4d4f;
     }
   }
+
+  .ant-input {
+    &:focus + label,
+    &:not(:placeholder-shown) + label {
+      animation: ${floatLabelAnimation} 0.2s forwards;
+    }
+  }
 `;
 
 const HelperText = styled.span`
@@ -51,7 +59,10 @@ const HelperText = styled.span`
   display: block;
 `;
 
-const StyledLabel = styled.label<{ isFloating: boolean }>`
+const StyledLabel = styled.label<{
+  isFloating: boolean;
+  $isRequired?: boolean;
+}>`
   color: #666;
   pointer-events: none;
   text-transform: capitalize;
@@ -59,6 +70,16 @@ const StyledLabel = styled.label<{ isFloating: boolean }>`
   transition: all 0.2s ease;
   background: white;
   padding: 0 4px;
+
+  ${(props) =>
+    props.$isRequired &&
+    `
+    &::after {
+      content: ' *';
+      color: #ff4d4f;
+      margin-left: 2px;
+    }
+  `}
 `;
 
 const ErrorMessage = styled.span`
@@ -78,11 +99,13 @@ const CustomInput = forwardRef<InputRef, CustomInputProps>(
       isLoading,
       type = "text",
       helperText,
+      required,
       ...props
     },
     ref,
   ) => {
     const { control } = useFormContext();
+    const [isFocused, setIsFocused] = useState(false);
 
     const InputComponent = type === "password" ? Input.Password : Input;
 
@@ -90,10 +113,17 @@ const CustomInput = forwardRef<InputRef, CustomInputProps>(
       <Controller
         name={name}
         control={control}
+        rules={{
+          required: required && "This field is required",
+        }}
         render={({ field, fieldState }) => (
           <InputWrapper>
             {label && (
-              <StyledLabel htmlFor={name} isFloating={false}>
+              <StyledLabel
+                htmlFor={name}
+                isFloating={isFocused || !!field.value}
+                $isRequired={required}
+              >
                 {label}
               </StyledLabel>
             )}
@@ -106,11 +136,14 @@ const CustomInput = forwardRef<InputRef, CustomInputProps>(
               status={fieldState.error ? "error" : undefined}
               prefix={icon}
               disabled={isLoading || props.disabled}
+              placeholder=" "
               onFocus={(e) => {
+                setIsFocused(true);
                 field.onBlur();
                 props.onFocus?.(e);
               }}
               onBlur={(e) => {
+                setIsFocused(false);
                 field.onBlur();
                 props.onBlur?.(e);
               }}

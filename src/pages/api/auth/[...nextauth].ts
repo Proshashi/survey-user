@@ -13,7 +13,17 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log({ credentials });
+        const credsWithDetails = credentials as any;
+        if (credsWithDetails?.token) {
+          setAuthTokenToHeader(credsWithDetails.token);
+          return {
+            id: credsWithDetails.id,
+            email: credsWithDetails.email,
+            name: credsWithDetails.name,
+            token: credsWithDetails.token,
+          } as any;
+        }
+
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Invalid credentials");
         }

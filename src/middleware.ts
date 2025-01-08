@@ -21,6 +21,6 @@ export const config = {
   matcher: [
     "/survey/:path*",
     // Exclude root path, auth-related and public paths
-    "/((?!$|/|auth|login|api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!$|auth|login|signup|api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

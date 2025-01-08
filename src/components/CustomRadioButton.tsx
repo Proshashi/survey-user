@@ -4,7 +4,6 @@ import styled, { css, keyframes } from "styled-components";
 import { Radio, Space, Spin } from "antd";
 import type { RadioProps, RadioGroupProps } from "antd";
 import { RadioRef } from "antd/es/radio";
-
 interface CustomRadioButtonProps extends Omit<RadioProps, "defaultValue"> {
   name: string;
   label?: React.ReactNode;
@@ -16,6 +15,7 @@ interface CustomRadioButtonProps extends Omit<RadioProps, "defaultValue"> {
   groupProps?: Omit<RadioGroupProps, "onChange">;
   variant?: "default" | "button";
   direction?: "horizontal" | "vertical";
+  required?: boolean;
 }
 
 const RadioWrapper = styled.div<{ $hasError?: boolean }>`
@@ -65,8 +65,7 @@ const RadioWrapper = styled.div<{ $hasError?: boolean }>`
       }
     `}
 `;
-
-const StyledLabel = styled.label`
+const StyledLabel = styled.label<{ $isRequired?: boolean }>`
   color: #666;
   text-transform: capitalize;
   font-size: 16px;
@@ -74,6 +73,17 @@ const StyledLabel = styled.label`
   transition: all 0.2s ease;
   background: white;
   padding: 0 4px;
+  margin-bottom: 8px;
+
+  ${(props) =>
+    props.$isRequired &&
+    css`
+      &::after {
+        content: " *";
+        color: #ff4d4f;
+        margin-left: 2px;
+      }
+    `}
 `;
 
 const HelperText = styled.span`
@@ -111,6 +121,7 @@ const CustomRadioButton = forwardRef<RadioRef, CustomRadioButtonProps>(
       groupProps,
       variant = "default",
       direction = "vertical",
+      required,
       ...props
     },
     ref,
@@ -124,9 +135,16 @@ const CustomRadioButton = forwardRef<RadioRef, CustomRadioButtonProps>(
       <Controller
         name={name}
         control={control}
+        rules={{
+          required: required && "This field is required",
+        }}
         render={({ field, fieldState }) => (
           <RadioWrapper $hasError={!!fieldState.error}>
-            {label && <StyledLabel htmlFor={name}>{label}</StyledLabel>}
+            {label && (
+              <StyledLabel htmlFor={name} $isRequired={required}>
+                {label}
+              </StyledLabel>
+            )}
 
             {isLoading && <Spin size="small" style={{ marginRight: 8 }} />}
 

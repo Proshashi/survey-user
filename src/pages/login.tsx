@@ -33,26 +33,23 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-// Animations
-const gradient = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
-
 // Styled Components
 const LoginWrapper = styled.div`
   min-height: 100vh;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
   background-size: 400% 400%;
-  animation: ${gradient} 15s ease infinite;
   padding: 20px;
 `;
 
 const StyledCard = styled(Card)`
+  /* display: flex;
+  flex-direction: column;
+  align-items: center; */
+
   width: 100%;
   max-width: 420px;
   background: rgba(255, 255, 255, 0.9);
@@ -122,7 +119,11 @@ const LoginPage = () => {
             <h1 style={{ textAlign: "center", marginBottom: "2rem" }}>
               Welcome Back
             </h1>
-            <Form onFinish={handleSubmit(onSubmit)} layout="vertical">
+            <Form
+              onFinish={handleSubmit(onSubmit)}
+              layout="vertical"
+
+            >
               <Form.Item
                 validateStatus={errors.email ? "error" : ""}
                 help={errors.email?.message}
@@ -170,6 +171,21 @@ const LoginPage = () => {
                 </Button>
               </Form.Item>
             </Form>
+            <Button
+              type="link"
+              onClick={() => router.push("/signup")}
+              style={{
+                marginTop: "1rem",
+                textAlign: "center",
+                color: "#1890ff",
+                alignSelf: "center",
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+              }}
+            >
+              Don't have an account? Sign Up
+            </Button>
           </StyledCard>
         </LoginWrapper>
       </FormProvider>
