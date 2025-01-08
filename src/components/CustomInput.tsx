@@ -11,6 +11,7 @@ interface CustomInputProps extends Omit<InputProps, "prefix"> {
   error?: string;
   isLoading?: boolean;
   type?: "text" | "password";
+  helperText?: string;
 }
 
 const floatLabel = keyframes`
@@ -43,22 +44,21 @@ const InputWrapper = styled.div`
   }
 `;
 
+const HelperText = styled.span`
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+`;
+
 const StyledLabel = styled.label<{ isFloating: boolean }>`
-  position: absolute;
-  left: 16px;
   color: #666;
   pointer-events: none;
+  text-transform: capitalize;
+  font-size: 16px;
   transition: all 0.2s ease;
   background: white;
   padding: 0 4px;
-  z-index: 1;
-
-  ${({ isFloating }) =>
-    isFloating &&
-    css`
-      animation: ${floatLabel} 0.2s ease forwards;
-      color: #1890ff;
-    `}
 `;
 
 const ErrorMessage = styled.span`
@@ -69,9 +69,20 @@ const ErrorMessage = styled.span`
 `;
 
 const CustomInput = forwardRef<InputRef, CustomInputProps>(
-  ({ name, label, icon, error, isLoading, type = "text", ...props }, ref) => {
+  (
+    {
+      name,
+      label,
+      icon,
+      error,
+      isLoading,
+      type = "text",
+      helperText,
+      ...props
+    },
+    ref,
+  ) => {
     const { control } = useFormContext();
-    const [isFocused, setIsFocused] = React.useState(false);
 
     const InputComponent = type === "password" ? Input.Password : Input;
 
@@ -82,10 +93,7 @@ const CustomInput = forwardRef<InputRef, CustomInputProps>(
         render={({ field, fieldState }) => (
           <InputWrapper>
             {label && (
-              <StyledLabel
-                htmlFor={name}
-                isFloating={isFocused || !!field.value}
-              >
+              <StyledLabel htmlFor={name} isFloating={false}>
                 {label}
               </StyledLabel>
             )}
@@ -99,16 +107,18 @@ const CustomInput = forwardRef<InputRef, CustomInputProps>(
               prefix={icon}
               disabled={isLoading || props.disabled}
               onFocus={(e) => {
-                setIsFocused(true);
                 field.onBlur();
                 props.onFocus?.(e);
               }}
               onBlur={(e) => {
-                setIsFocused(false);
                 field.onBlur();
                 props.onBlur?.(e);
               }}
             />
+
+            {helperText && !fieldState.error && (
+              <HelperText>{helperText}</HelperText>
+            )}
 
             {fieldState.error && (
               <ErrorMessage>{fieldState.error.message}</ErrorMessage>

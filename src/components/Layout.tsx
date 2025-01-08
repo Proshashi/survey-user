@@ -7,7 +7,6 @@ const { Content } = AntLayout;
 
 const StyledLayout = styled(AntLayout)`
   min-height: 100vh;
-  padding: 24px;
 `;
 
 const MainContent = styled(Content)`
@@ -47,23 +46,23 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, loading = false }) => {
-  const pathname = usePathname();
+  //   const pathname = usePathname();
 
-  const pathSegments = pathname?.split("/").filter(Boolean) || [];
+  //   const pathSegments = pathname?.split("/").filter(Boolean) || [];
 
   return (
     <StyledLayout>
       <Navbar />
       <StyledLayout>
         <ContentWrapper>
-          <StyledBreadcrumb
+          {/* <StyledBreadcrumb
             items={[
               { title: "Home" },
               ...pathSegments.map((segment) => ({
                 title: segment.charAt(0).toUpperCase() + segment.slice(1),
               })),
             ]}
-          />
+          /> */}
           <MainContent>
             {loading && (
               <LoadingOverlay>

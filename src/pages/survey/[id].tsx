@@ -1,239 +1,178 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useRouter } from "next/router";
-import apiClient from "@/lib/axios";
-import { Button, Divider, Form, Typography } from "antd";
-import { TextQuestion } from "@/components/questions/TextQuestion";
-import { Formik, FormikHelpers } from "formik";
-import SingleChoiceQuestion from "@/components/questions/SingleChoiceQuestion";
-import MultipleChoiceQuestion from "@/components/questions/MultipleChoiceQuestion";
-
-import * as yup from "yup";
-import { AxiosError } from "axios";
-import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useForm, FormProvider } from "react-hook-form";
+import { Card, Typography, Button, message, Space, ConfigProvider } from "antd";
+import styled, { keyframes } from "styled-components";
 import Layout from "@/components/Layout";
+import CustomInput from "@/components/CustomInput";
+import CustomRadioButton from "@/components/CustomRadioButton";
+import CustomCheckbox from "@/components/CustomCheckbox";
+import apiClient from "@/lib/axios";
+import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query";
 
-const { Title, Text } = Typography;
+const { Title, Paragraph } = Typography;
 
-type Props = {};
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
 
-enum QuestionTypeToUse {
-  TEXT = "text",
-  MULTIPLE_CHOICE = "multiple-choice",
-  SINGLE_CHOICE = "single-choice",
-}
+const HeaderWrapper = styled(Card)`
+  margin-bottom: 24px;
+`;
 
-export interface ISurvey {
-  title: string;
-  description: string;
-  questions: {
-    question: string;
-    type: string;
-    order: number;
-    _id: string;
-    options?: {
-      option: string;
-      order: number;
-    }[];
-  }[];
-}
+const QuestionCard = styled(Card)`
+  animation: ${fadeIn} 0.5s ease;
+  margin-bottom: 24px;
+  border-radius: 12px;
 
-function generateInitialQuestionValues(questions: ISurvey["questions"]) {
-  const initialValues: any = {};
-  questions.forEach((q) => {
-    if (q.type === QuestionTypeToUse.TEXT) {
-      initialValues[q._id] = "";
-    } else if (q.type === QuestionTypeToUse.MULTIPLE_CHOICE) {
-      initialValues[q._id] = [];
-    } else if (q.type === QuestionTypeToUse.SINGLE_CHOICE) {
-      initialValues[q._id] = "";
-    }
-  });
-  return initialValues;
-}
-
-function generateYupSchema(questions: ISurvey["questions"]) {
-  const schema: any = {};
-  questions.forEach((q) => {
-    if (q.type === QuestionTypeToUse.TEXT) {
-      schema[q._id] = yup.string().required("Required");
-    } else if (q.type === QuestionTypeToUse.MULTIPLE_CHOICE) {
-      schema[q._id] = yup
-        .array()
-        .of(yup.string())
-        .nonNullable()
-        .min(1, "Required");
-    } else if (q.type === QuestionTypeToUse.SINGLE_CHOICE) {
-      schema[q._id] = yup.string().required("Required");
-    }
-  });
-  return yup.object().shape(schema);
-}
-
-const SurveyPage = (props: Props) => {
-  const router = useRouter();
-  const params = useParams();
-  const id = params?.id;
-  // const { id } = params;
-  console.log("params", params);
-  // const id = router.query?.id;
-
-  const [surveyData, setSurveyData] = useState<any>(null);
-  const [apiError, setApiError] = useState<string | undefined>("");
-
-  useEffect(() => {
-    if (id) {
-      apiClient
-        .get(`/survey/${id}`)
-        .then((res) => {
-          const data = res.data?.data;
-          setSurveyData(data);
-        })
-        .catch((err) => {
-          console.log({ err });
-          setApiError(
-            "Oops! The survey you are looking for was not found. Re-verify your URL.",
-          );
-        });
-    }
-  }, [id]);
-
-  console.log("surveyData", surveyData);
-
-  async function handleSubmit(data: any, actions: FormikHelpers<any>) {
-    try {
-      actions.setSubmitting(true);
-      let dataToSubmit: any = {
-        anonymous: true,
-        answers: [],
-      };
-
-      Object.entries(data).forEach(([key, value]) => {
-        const questionType = surveyData?.questions.find(
-          (q: any) => q._id === key,
-        ).type;
-        dataToSubmit.answers.push({
-          questionId: key,
-          answer: value,
-          questionType,
-        });
-      });
-
-      await apiClient.post(`/survey-result/${id}`, dataToSubmit);
-      setApiError(undefined);
-      actions.resetForm();
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        if (error.response?.data?.message) {
-          setApiError(error.response.data.message);
-        } else {
-          setApiError("Something went wrong");
-        }
-      } else {
-        console.log("error", error);
-        setApiError("Something went wrong");
-      }
-    } finally {
-      actions.setSubmitting(false);
-    }
+  .ant-card-head {
+    border-bottom: none;
+    padding-bottom: 0;
   }
 
-  if (apiError) {
-    return (
-      <div
-        style={{
-          color: "red",
-          fontSize: "2rem",
-          fontWeight: "bold",
-          alignItems: "center",
-          display: "flex",
-          justifyContent: "center",
-          height: "100vh",
-        }}
-      >
-        {apiError}
-      </div>
-    );
+  .ant-card-body {
+    padding-top: 16px;
+  }
+`;
+
+const FooterWrapper = styled.div`
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+`;
+
+const SurveyPage = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const { id } = router.query;
+
+  const methods = useForm({
+    mode: "onChange",
+  });
+
+  const { data: surveyData, isLoading }: UseQueryResult<any> = useQuery({
+    queryKey: ["survey", id],
+    queryFn: async () => {
+      if (!id || !session) return null;
+      const response = await apiClient.get(`/survey/${id}`);
+      return response.data;
+    },
+    enabled: !!id && !!session,
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiClient.post(
+        `/survey-result/${id}`,
+        {
+          anonymous: false,
+          answers: Object.entries(data).map(([questionId, answer]) => ({
+            questionId,
+            answer,
+            questionType: surveyData.questions.find(
+              (q: any) => q._id === questionId,
+            ).type,
+          })),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        },
+      );
+    },
+    onSuccess: () => {
+      message.success("Survey submitted successfully!");
+      // router.push("/surveys/completed");
+    },
+    onError: (error: Error) => {
+      console.error("Submit error:", error);
+      message.error("Failed to submit survey");
+    },
+  });
+
+  const handleSubmit = async (data: any) => {
+    submitMutation.mutate(data);
+  };
+
+  const renderQuestion = (question: any) => {
+    switch (question?.type) {
+      case "text":
+        return (
+          <CustomInput
+            name={question._id}
+            label={question.question}
+            helperText={question.helpText}
+            required={question.required}
+          />
+        );
+      case "single-choice":
+        return (
+          <CustomRadioButton
+            name={question._id}
+            label={question.question}
+            helperText={question.helpText}
+            isGroup
+            options={question.options.map((opt: any) => ({
+              label: opt.option,
+              value: opt._id,
+            }))}
+            required={question.required}
+          />
+        );
+      case "multiple-choice":
+        return (
+          <CustomCheckbox
+            name={question._id}
+            label={question.question}
+            helperText={question.helpText}
+            isGroup
+            options={question.options.map((opt: any) => ({
+              label: opt.option,
+              value: opt._id,
+            }))}
+            required={question.required}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  if (!isLoading && !surveyData) {
+    return null;
   }
 
   return (
-    <Layout>
-      {surveyData ? (
-        <>
-          <Title
-            level={3}
-            style={{
-              textTransform: "uppercase",
-              fontWeight: "800",
-              letterSpacing: "1.5px",
-            }}
-          >
-            {surveyData.title}
-          </Title>
-          <Text italic>{surveyData.description}</Text>
-          <Divider />
-          <Formik
-            initialValues={generateInitialQuestionValues(surveyData?.questions)}
-            onSubmit={handleSubmit}
-            validationSchema={generateYupSchema(surveyData?.questions)}
-            enableReinitialize
-          >
-            {({ handleSubmit, isSubmitting }) => {
-              return (
-                <Form layout="vertical">
-                  {surveyData?.questions?.map((q: any, index: number) => {
-                    return (
-                      <div key={q.id}>
-                        <div>
-                          {q.type === QuestionTypeToUse.TEXT && (
-                            <TextQuestion
-                              name={q._id}
-                              label={q.question}
-                              required
-                            />
-                          )}
-                          {q.type === QuestionTypeToUse.SINGLE_CHOICE && (
-                            <SingleChoiceQuestion
-                              name={q._id}
-                              label={q.question}
-                              options={q.options.map((opt: any) => ({
-                                ...opt,
-                                id: opt._id,
-                              }))}
-                              required
-                            />
-                          )}
-                          {q.type === QuestionTypeToUse.MULTIPLE_CHOICE && (
-                            <MultipleChoiceQuestion
-                              name={q._id}
-                              label={q.question}
-                              options={q.options.map((opt: any) => ({
-                                ...opt,
-                                id: opt._id,
-                              }))}
-                              required
-                            />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    onClick={() => handleSubmit()}
-                    disabled={isSubmitting}
-                    loading={isSubmitting}
-                  >
-                    Submit
-                  </Button>
-                </Form>
-              );
-            }}
-          </Formik>
-        </>
-      ) : (
-        <div>Loading...</div>
-      )}
+    <Layout loading={status === "loading" || isLoading}>
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(handleSubmit)}>
+          <HeaderWrapper>
+            <Title level={3}>{surveyData?.title}</Title>
+            <Paragraph>{surveyData?.description}</Paragraph>
+          </HeaderWrapper>
+
+          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+            {surveyData?.questions.map((question: any, index: number) => (
+              <QuestionCard key={question._id} title={`Question ${index + 1}`}>
+                {renderQuestion(question)}
+              </QuestionCard>
+            ))}
+          </Space>
+
+          <FooterWrapper>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitMutation.isPending}
+            >
+              Submit Survey
+            </Button>
+          </FooterWrapper>
+        </form>
+      </FormProvider>
     </Layout>
   );
 };

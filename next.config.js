@@ -4,6 +4,7 @@ const nextConfig = {
   transpilePackages: [
     "antd",
     "@ant-design",
+    "styled-components",
     "rc-util",
     "rc-pagination",
     "rc-picker",
