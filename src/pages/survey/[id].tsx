@@ -9,6 +9,8 @@ import MultipleChoiceQuestion from "@/components/questions/MultipleChoiceQuestio
 
 import * as yup from "yup";
 import { AxiosError } from "axios";
+import { useParams } from "next/navigation";
+import Layout from "@/components/Layout";
 
 const { Title, Text } = Typography;
 
@@ -69,7 +71,11 @@ function generateYupSchema(questions: ISurvey["questions"]) {
 
 const SurveyPage = (props: Props) => {
   const router = useRouter();
-  const id = router.query?.id;
+  const params = useParams();
+  const id = params?.id;
+  // const { id } = params;
+  console.log("params", params);
+  // const id = router.query?.id;
 
   const [surveyData, setSurveyData] = useState<any>(null);
   const [apiError, setApiError] = useState<string | undefined>("");
@@ -83,12 +89,15 @@ const SurveyPage = (props: Props) => {
           setSurveyData(data);
         })
         .catch((err) => {
+          console.log({ err });
           setApiError(
             "Oops! The survey you are looking for was not found. Re-verify your URL.",
           );
         });
     }
   }, [id]);
+
+  console.log("surveyData", surveyData);
 
   async function handleSubmit(data: any, actions: FormikHelpers<any>) {
     try {
@@ -147,11 +156,7 @@ const SurveyPage = (props: Props) => {
   }
 
   return (
-    <div
-      style={{
-        padding: "20px",
-      }}
-    >
+    <Layout>
       {surveyData ? (
         <>
           <Title
@@ -229,7 +234,7 @@ const SurveyPage = (props: Props) => {
       ) : (
         <div>Loading...</div>
       )}
-    </div>
+    </Layout>
   );
 };
 
